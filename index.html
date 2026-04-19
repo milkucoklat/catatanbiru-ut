@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatatanBiru UT — Generator Rangkuman Modul Otomatis</title>
+<meta name="description" content="Generator rangkuman modul Universitas Terbuka otomatis. Buat catatan belajar lengkap dengan tabel hafalan UAS dan soal prediksi dalam hitungan detik.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: rgba(99,179,237,0.15);
+  --border2: rgba(99,179,237,0.3);
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --accent-glow: rgba(59,130,246,0.25);
+  --text: #f0f6ff;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --radius: 12px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 800px 600px at 20% 10%, rgba(59,130,246,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 400px at 80% 80%, rgba(255,107,157,0.05) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(99,179,237,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,179,237,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+.container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* HEADER */
+.header { text-align: center; padding: 56px 0 36px; }
+
+.logo { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+
+.logo-icon {
+  width: 50px; height: 50px;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 0 28px var(--accent-glow);
+}
+
+.logo-text { font-family: 'Caveat', cursive; font-size: 30px; font-weight: 700; }
+.logo-text span { color: var(--accent2); }
+
+.tagline { font-size: 14px; color: var(--text2); font-weight: 300; margin-bottom: 16px; }
+
+.badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.badge {
+  font-size: 11px; font-weight: 500; padding: 3px 10px;
+  border-radius: 99px; border: 1px solid;
+}
+.b-blue { color: var(--accent2); border-color: rgba(96,165,250,0.25); background: rgba(59,130,246,0.07); }
+.b-pink { color: #f9a8d4; border-color: rgba(249,168,212,0.25); background: rgba(236,72,153,0.07); }
+.b-green { color: #6ee7b7; border-color: rgba(110,231,183,0.25); background: rgba(16,185,129,0.07); }
+
+/* STEPS */
+.steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 32px 0; }
+.step {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; text-align: center;
+}
+.step-num {
+  width: 26px; height: 26px; background: var(--accent); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; margin: 0 auto 8px;
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+.step-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.step-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 50px rgba(59,130,246,0.04);
+}
+
+.card-top {
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface2);
+}
+
+.dots { display: flex; gap: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dr { background: #ef4444; } .dy { background: #f59e0b; } .dg { background: #10b981; }
+
+.card-label { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+
+.card-body { padding: 22px; }
+
+/* FORM */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+.field { margin-bottom: 14px; }
+.label {
+  font-size: 11px; font-weight: 500; color: var(--text2);
+  margin-bottom: 7px; display: flex; align-items: center; gap: 5px;
+}
+.label em { color: var(--accent2); font-style: normal; }
+
+input[type="text"], textarea, select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+  font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text);
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+input[type="text"]:focus, textarea:focus, select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+}
+textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
+
+select {
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+
+.char { font-size: 11px; color: var(--text3); text-align: right; margin-top: 5px;
+  font-family: 'JetBrains Mono', monospace; }
+
+/* TIP */
+.tip {
+  background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.18);
+  border-radius: var(--radius); padding: 11px 14px;
+  font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 16px;
+}
+.tip strong { color: var(--accent2); }
+
+/* BTN */
+.btn-gen {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  border: none; border-radius: var(--radius);
+  font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600;
+  color: white; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-gen:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px var(--accent-glow); }
+.btn-gen:active:not(:disabled) { transform: translateY(0); }
+.btn-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* PROGRESS */
+.progress { display: none; margin-top: 18px; }
+.pbar-wrap { background: var(--bg); border-radius: 99px; height: 3px; overflow: hidden; margin-bottom: 10px; }
+.pbar {
+  height: 100%; border-radius: 99px; width: 0%;
+  background: linear-gradient(90deg, #1e40af, #60a5fa, #ff6b9d);
+  background-size: 200%;
+  transition: width 0.5s ease;
+  animation: shimmer 2s linear infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.plabel { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+.spinner {
+  width: 13px; height: 13px; border: 2px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ERROR */
+.error {
+  display: none; margin-top: 14px;
+  background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius); padding: 12px 14px;
+  font-size: 12px; color: #fca5a5;
+}
+
+/* RESULT */
+.result { display: none; margin-top: 22px; }
+
+.result-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.result-title { font-size: 13px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 6px; }
+.result-btns { display: flex; gap: 8px; }
+
+.btn-dl {
+  padding: 8px 14px; font-size: 12px; font-weight: 500;
+  font-family: 'Sora', sans-serif; border-radius: 8px; cursor: pointer;
+  background: var(--green); color: white; border: none;
+  display: flex; align-items: center; gap: 5px; transition: opacity 0.15s;
+}
+.btn-dl:hover { opacity: 0.88; }
+
+.btn-cp {
+  padding: 8px 14px; font-size: 12px; font-weight: 500;
+  font-family: 'Sora', sans-serif; border-radius: 8px; cursor: pointer;
+  background: transparent; color: var(--text2); border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 5px; transition: all 0.15s;
+}
+.btn-cp:hover { border-color: var(--border2); color: var(--text); }
+
+.preview-wrap {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+}
+.preview-bar {
+  background: var(--surface2); padding: 9px 13px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.preview-url {
+  flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--text3); background: var(--bg); padding: 3px 9px;
+  border-radius: 5px; border: 1px solid var(--border);
+}
+iframe { width: 100%; height: 580px; border: none; background: white; }
+
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 28px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; text-align: center;
+}
+.stat-n { font-family: 'Caveat', cursive; font-size: 26px; font-weight: 700; color: var(--accent2); margin-bottom: 3px; }
+.stat-l { font-size: 11px; color: var(--text2); }
+
+/* FOOTER */
+.footer {
+  text-align: center; margin-top: 44px; padding-top: 22px;
+  border-top: 1px solid var(--border); font-size: 12px; color: var(--text3);
+}
+.footer strong { color: var(--text2); }
+
+@media (max-width: 580px) {
+  .steps, .row2, .stats { grid-template-columns: 1fr; }
+  .result-btns { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">📘</div>
+      <div class="logo-text">Catatan<span>Biru</span> UT</div>
+    </div>
+    <div class="tagline">Generator Rangkuman Modul Universitas Terbuka — Otomatis &amp; Instan</div>
+    <div class="badges">
+      <span class="badge b-blue">✦ Semua Mata Kuliah UT</span>
+      <span class="badge b-pink">✦ Tabel Hafalan UAS</span>
+      <span class="badge b-green">✦ Soal Prediksi Otomatis</span>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Buka Modul UT</div>
+      <div class="step-desc">Login ke elearning.ut.ac.id, buka Ruang Baca Virtual, copy teks modul dengan Ctrl+A lalu Ctrl+C</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Paste &amp; Isi Form</div>
+      <div class="step-desc">Tempel isi modul, isi nama mata kuliah dan nomor modul, pilih jenis catatan yang diinginkan</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Download Catatan</div>
+      <div class="step-desc">Klik Generate, tunggu 15-30 detik, download file HTML Catatan Biru siap belajar</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <div class="dots">
+        <div class="dot dr"></div><div class="dot dy"></div><div class="dot dg"></div>
+      </div>
+      <div class="card-label">⚡ Generator Catatan Biru</div>
+      <div class="mono">v2.0 · Aman</div>
+    </div>
+
+    <div class="card-body">
+
+      <div class="tip">
+        <strong>💡 Cara copy teks modul UT:</strong> Buka Ruang Baca Virtual → klik di area teks modul → tekan <strong>Ctrl+A</strong> lalu <strong>Ctrl+C</strong> → paste di bawah ini. Bisa juga pakai <strong>Claude in Chrome</strong> untuk membaca otomatis.
+      </div>
+
+      <div class="row2">
+        <div>
+          <div class="label"><em>📚</em> Kode &amp; Nama Mata Kuliah</div>
+          <input type="text" id="inp-matkul" placeholder="cth: SKOM4315 – Komunikasi Massa">
+        </div>
+        <div>
+          <div class="label"><em>📖</em> Nomor Modul</div>
+          <select id="inp-modul">
+            <option value="1">Modul 1</option><option value="2">Modul 2</option>
+            <option value="3">Modul 3</option><option value="4">Modul 4</option>
+            <option value="5">Modul 5</option><option value="6">Modul 6</option>
+            <option value="7">Modul 7</option><option value="8">Modul 8</option>
+            <option value="9">Modul 9</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="label"><em>📝</em> Isi Teks Modul</div>
+        <textarea id="inp-content" placeholder="Paste isi modul UT di sini...&#10;&#10;Semakin banyak teks yang kamu paste, semakin lengkap dan akurat catatan yang dihasilkan. Minimal 200 karakter untuk hasil optimal." oninput="updateChar()"></textarea>
+        <div class="char"><span id="char-count">0</span> karakter · min 200 untuk hasil optimal</div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <div class="label"><em>🎯</em> Fokus Output</div>
+          <select id="inp-focus">
+            <option value="uas">🎯 Siap UAS (Hafalan + Soal Prediksi)</option>
+            <option value="diskusi">💬 Diskusi &amp; Tugas per Sesi</option>
+            <option value="lengkap">📖 Catatan Lengkap Semua</option>
+          </select>
+        </div>
+        <div>
+          <div class="label"><em>📊</em> Kepadatan Catatan</div>
+          <select id="inp-density">
+            <option value="padat">⚡ Padat &amp; Ringkas</option>
+            <option value="lengkap">📚 Lengkap &amp; Detail</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-gen" id="btn-gen" onclick="generate()">
+        <span id="btn-icon">⚡</span>
+        <span id="btn-txt">Generate Catatan Biru</span>
+      </button>
+
+      <div class="progress" id="progress">
+        <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+        <div class="plabel"><div class="spinner"></div><span id="plabel">Menganalisis modul...</span></div>
+      </div>
+
+      <div class="error" id="error-box"></div>
+
+      <div class="result" id="result">
+        <div class="result-top">
+          <div class="result-title">✅ Catatan Biru berhasil dibuat!</div>
+          <div class="result-btns">
+            <button class="btn-cp" id="btn-cp" onclick="copyHTML()">📋 Copy HTML</button>
+            <button class="btn-dl" onclick="downloadHTML()">⬇️ Download .html</button>
+          </div>
+        </div>
+        <div class="preview-wrap">
+          <div class="preview-bar">
+            <div class="dots"><div class="dot dr"></div><div class="dot dy"></div><div class="dot dg"></div></div>
+            <div class="preview-url" id="preview-name">catatan-biru.html</div>
+          </div>
+          <iframe id="preview" title="Preview Catatan Biru"></iframe>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-n" id="stat-count">0</div>
+      <div class="stat-l">Catatan dibuat sesi ini</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">∞</div>
+      <div class="stat-l">Mata kuliah UT didukung</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">~20s</div>
+      <div class="stat-l">Waktu generate rata-rata</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <strong>CatatanBiru UT</strong> — Dibuat untuk mahasiswa Universitas Terbuka Indonesia<br>
+    <span style="display:block;margin-top:4px;">Powered by Claude AI · API aman via server · Data tidak disimpan</span>
+  </div>
+
+</div>
+
+<script>
+const CSS = `@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+.page{background:#f0f6ff;background-image:linear-gradient(#c5d8f5 1px,transparent 1px),linear-gradient(90deg,#c5d8f5 1px,transparent 1px);background-size:28px 28px;padding:24px 20px 24px 54px;font-family:'Nunito',sans-serif;border:2px solid #3a7bd5;border-radius:4px;position:relative;}
+.page::before{content:'';position:absolute;left:42px;top:0;bottom:0;width:2px;background:#ff6b9d;opacity:.55;}
+.judul{font-family:'Caveat',cursive;font-size:34px;font-weight:700;color:#1a3a7c;text-align:center;margin-bottom:3px;}
+.sub{font-family:'Caveat',cursive;font-size:14px;color:#3a6abf;text-align:center;margin-bottom:16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.full{grid-column:1/-1;}
+.stitle{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#1a3a7c;border-bottom:2.5px solid #3a7bd5;padding-bottom:2px;margin-bottom:8px;margin-top:13px;}
+.ssub{font-family:'Caveat',cursive;font-size:17px;font-weight:600;color:#0d2b6e;margin-top:10px;margin-bottom:4px;}
+.item{display:flex;gap:6px;font-size:12px;color:#0d1f3c;line-height:1.55;margin-bottom:5px;padding-left:2px;font-family:'Nunito',sans-serif;align-items:flex-start;}
+.dia{color:#c0392b;font-size:13px;flex-shrink:0;line-height:1.35;}.arr{color:#1565c0;font-size:12px;flex-shrink:0;line-height:1.35;}
+.nb{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;border-radius:50%;background:#1565c0;color:#fff;font-size:10px;font-weight:700;flex-shrink:0;font-family:'Nunito',sans-serif;padding:0 2px;}
+.nb.t{background:#00695c;}.nb.r{background:#c62828;}.nb.o{background:#e65100;}
+.hl-navy{background:#1565c0;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700;font-size:11.5px;}
+.hl-blue{background:#bbdefb;color:#0d1f6e;padding:1px 5px;border-radius:3px;font-weight:700;font-size:11.5px;}
+.hl-red{background:#ffcdd2;color:#b71c1c;padding:1px 5px;border-radius:3px;font-weight:700;font-size:11.5px;}
+.hl-or{background:#ffe0b2;color:#bf360c;padding:1px 5px;border-radius:3px;font-weight:700;font-size:11.5px;}
+.hl-gr{background:#c8e6c9;color:#1b5e20;padding:1px 5px;border-radius:3px;font-weight:700;font-size:11.5px;}
+.hl-yw{background:#fff9c4;color:#33691e;padding:1px 5px;border-radius:3px;font-weight:700;font-size:11.5px;border:1px solid #f9a825;}
+.kotak{border:2px solid #3a7bd5;border-radius:8px;padding:8px 10px;background:#dbeeff;margin:6px 0;font-size:12px;line-height:1.6;font-family:'Nunito',sans-serif;color:#0d1f3c;}
+.kotak-red{border:2px dashed #e53935;border-radius:8px;padding:8px 10px;background:#ffebee;margin:6px 0;font-size:12px;line-height:1.6;font-family:'Nunito',sans-serif;color:#7f0000;}
+.kotak-yw{border:2px solid #f9a825;border-radius:8px;padding:8px 10px;background:#fffde7;margin:6px 0;font-size:12px;line-height:1.6;font-family:'Nunito',sans-serif;color:#33300a;}
+.kotak-gr{border:2px solid #43a047;border-radius:8px;padding:8px 10px;background:#e8f5e9;margin:6px 0;font-size:12px;line-height:1.6;font-family:'Nunito',sans-serif;color:#0a2f0a;}
+.ktitle{font-family:'Caveat',cursive;font-size:13px;font-weight:700;margin-bottom:4px;color:#0d2b6e;}
+.divider{border:none;border-top:1.5px dashed #90b8e8;margin:11px 0;}
+.tabel{width:100%;border-collapse:collapse;margin:6px 0;font-size:11px;}
+.tabel th{background:#1565c0;color:#fff;padding:5px 6px;text-align:left;font-family:'Caveat',cursive;font-size:13px;font-weight:600;}
+.tabel td{padding:5px 6px;border-bottom:1px solid #bbdefb;vertical-align:top;line-height:1.5;color:#0d1f3c;}
+.tabel tr:nth-child(even) td{background:#dbeeff;}.tabel tr:nth-child(odd) td{background:#f0f6ff;}
+.warn{border-left:4px solid #1565c0;background:#dbeeff;padding:5px 8px;border-radius:0 6px 6px 0;font-size:11.5px;color:#0d1f3c;margin:6px 0;font-family:'Nunito',sans-serif;line-height:1.6;}
+.footer{font-family:'Caveat',cursive;font-size:13px;color:#3a6abf;text-align:center;margin-top:16px;padding-top:10px;border-top:1.5px solid #90b8e8;}
+.kb{display:inline-block;background:#1565c0;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:4px;font-family:'Nunito',sans-serif;}
+.kb.t{background:#00695c;}.kb.o{background:#e65100;}
+.soal{border:2px solid #c62828;border-radius:7px;padding:7px 9px;background:#fff5f5;margin:5px 0;font-size:11.5px;color:#0d1f3c;font-family:'Nunito',sans-serif;}
+.soal .q{font-weight:700;margin-bottom:3px;color:#7f0000;font-size:12px;}
+.soal .jwb{font-weight:700;color:#1565c0;margin-top:4px;border-top:1px dashed #ffcdd2;padding-top:3px;font-size:11.5px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0;}
+.kard{background:#dbeeff;border:1.5px solid #3a7bd5;border-radius:8px;padding:8px;font-size:11.5px;color:#0d1f3c;font-family:'Nunito',sans-serif;}
+.kard-title{font-family:'Caveat',cursive;font-size:14px;font-weight:700;color:#0d2b6e;margin-bottom:3px;}`;
+
+let generatedHTML = '';
+let count = 0;
+
+const steps = [
+  { pct: 12, label: 'Membaca dan menganalisis isi modul...' },
+  { pct: 28, label: 'Mengidentifikasi konsep dan tokoh penting...' },
+  { pct: 48, label: 'Menyusun tabel hafalan wajib UAS...' },
+  { pct: 68, label: 'Membuat soal prediksi dan kunci jawaban...' },
+  { pct: 85, label: 'Memformat Catatan Biru...' },
+  { pct: 100, label: 'Selesai!' }
+];
+
+function updateChar() {
+  document.getElementById('char-count').textContent =
+    document.getElementById('inp-content').value.length.toLocaleString('id');
+}
+
+async function generate() {
+  const content = document.getElementById('inp-content').value.trim();
+  const matkul = document.getElementById('inp-matkul').value.trim() || 'Mata Kuliah UT';
+  const modul = document.getElementById('inp-modul').value;
+  const focus = document.getElementById('inp-focus').value;
+  const density = document.getElementById('inp-density').value;
+
+  if (content.length < 100) {
+    showError('Teks modul terlalu pendek. Paste lebih banyak isi modul (minimal 100 karakter) untuk hasil yang bagus.');
+    return;
+  }
+
+  hideError(); hideResult(); showProgress(); setLoading(true);
+
+  let step = 0;
+  const iv = setInterval(() => {
+    if (step < steps.length - 1) {
+      document.getElementById('pbar').style.width = steps[step].pct + '%';
+      document.getElementById('plabel').textContent = steps[step].label;
+      step++;
+    }
+  }, 1400);
+
+  const focusMap = {
+    uas: 'Fokus pada tabel hafalan wajib UAS (semua tokoh+tahun+kata kunci) dan 8 soal prediksi UAS pilihan ganda dengan kunci jawaban.',
+    diskusi: 'Fokus pada ringkasan per KB dan contoh jawaban diskusi yang bisa langsung dipakai untuk forum UT.',
+    lengkap: 'Buat catatan selengkap mungkin: semua KB, tabel hafalan, soal prediksi, dan kunci jawaban.'
+  };
+
+  const densityMap = {
+    padat: 'Buat ringkas dan padat, hanya poin-poin paling penting. Hindari penjelasan panjang.',
+    lengkap: 'Buat selengkap mungkin dengan penjelasan yang cukup untuk setiap konsep.'
+  };
+
+  const prompt = `Kamu adalah generator Catatan Biru untuk mahasiswa Universitas Terbuka Indonesia.
+
+TUGAS: Buat rangkuman HTML "Catatan Biru" dari isi modul berikut.
+
+INFO MODUL:
+- Mata Kuliah: ${matkul}
+- Nomor Modul: ${modul}
+
+INSTRUKSI FOKUS: ${focusMap[focus]}
+INSTRUKSI KEPADATAN: ${densityMap[density]}
+
+STRUKTUR HTML WAJIB:
+<div class="page">
+  <div class="judul">[emoji] [Judul Topik Modul]</div>
+  <div class="sub">[Kode Matkul] — [Nama Matkul] · Modul [N] · [Penulis jika ada di teks]</div>
+  <div class="two-col">
+    [Per KB: gunakan .full untuk header KB, lalu 2 kolom untuk isi]
+    [Kolom kiri & kanan: definisi dalam .kotak, poin dengan .arr/.dia/.nb, highlight .hl-navy/.hl-blue/.hl-red/.hl-gr/.hl-yw]
+    [Tabel perbandingan gunakan .tabel]
+    <div class="full">
+      [Divider .divider]
+      [Tabel Hafalan Wajib UAS dengan .stitle dan .tabel - WAJIB ADA]
+      [Divider .divider]
+      [Soal Prediksi UAS: 8 soal dalam .two-col, gunakan .soal dan .jwb - WAJIB ADA]
+    </div>
+  </div>
+  <div class="footer">[Kode] · [Nama Matkul] · Modul [N] · Universitas Terbuka · Catatan Biru AI</div>
+</div>
+
+ATURAN PENTING:
+- Output HANYA kode HTML mulai dari <div class="page"> sampai </div> penutupnya
+- JANGAN tulis <style>, <!DOCTYPE>, <html>, <head>, <body>, atau penjelasan apapun
+- Gunakan class CSS persis seperti di atas
+- Soal UAS harus pilihan ganda A/B/C/D dengan .jwb berisi jawaban + penjelasan singkat
+
+ISI MODUL:
+${content.substring(0, 9000)}`;
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+
+    const raw = data.result || '';
+    const match = raw.match(/<div class="page">[\s\S]*<\/div>/);
+    const body = match ? match[0] : raw;
+
+    generatedHTML = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catatan Biru — ${matkul} Modul ${modul}</title>
+<style>${CSS}</style>
+</head>
+<body style="padding:20px;background:#f5f7fa;">
+${body}
+</body>
+</html>`;
+
+    clearInterval(iv);
+    document.getElementById('pbar').style.width = '100%';
+    document.getElementById('plabel').textContent = 'Selesai! Catatan siap diunduh.';
+
+    setTimeout(() => {
+      hideProgress();
+      showResult(matkul, modul);
+      count++;
+      document.getElementById('stat-count').textContent = count;
+    }, 500);
+
+  } catch (err) {
+    clearInterval(iv);
+    hideProgress();
+    showError('Gagal: ' + err.message + '. Pastikan koneksi internet stabil lalu coba lagi.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('btn-gen');
+  btn.disabled = on;
+  document.getElementById('btn-icon').textContent = on ? '⏳' : '⚡';
+  document.getElementById('btn-txt').textContent = on ? 'Sedang membuat catatan...' : 'Generate Catatan Biru';
+}
+
+function showProgress() { document.getElementById('progress').style.display = 'block'; }
+function hideProgress() { document.getElementById('progress').style.display = 'none'; }
+
+function showResult(matkul, modul) {
+  const sec = document.getElementById('result');
+  sec.style.display = 'block';
+  const name = (matkul||'modul').replace(/[^a-z0-9]/gi,'-').toLowerCase();
+  document.getElementById('preview-name').textContent = `catatan-biru-${name}-modul${modul}.html`;
+  const blob = new Blob([generatedHTML], {type:'text/html'});
+  document.getElementById('preview').src = URL.createObjectURL(blob);
+  sec.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function hideResult() { document.getElementById('result').style.display = 'none'; }
+
+function showError(msg) {
+  const b = document.getElementById('error-box');
+  b.textContent = '⚠️ ' + msg;
+  b.style.display = 'block';
+}
+function hideError() { document.getElementById('error-box').style.display = 'none'; }
+
+function downloadHTML() {
+  const matkul = document.getElementById('inp-matkul').value.trim() || 'modul';
+  const modul = document.getElementById('inp-modul').value;
+  const name = matkul.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([generatedHTML],{type:'text/html'}));
+  a.download = `catatan-biru-${name}-modul${modul}.html`;
+  a.click();
+}
+
+function copyHTML() {
+  navigator.clipboard.writeText(generatedHTML).then(() => {
+    const btn = document.getElementById('btn-cp');
+    btn.textContent = '✅ Tersalin!';
+    setTimeout(() => { btn.textContent = '📋 Copy HTML'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
